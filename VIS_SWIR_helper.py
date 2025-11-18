@@ -35,6 +35,10 @@ class Hypercube:
         cube=torch.from_numpy(data_np).to(self.d_type)
 
         return cube
+    
+    def ref_normalization(self,w_ref_path,d_ref_path,cube):
+        cube_norm=cube
+        return cube_norm
 
 
 
