@@ -20,25 +20,46 @@ class Hypercube:
             cube: (torch.tensor) 3D hypercube with dimmension [s,y,x]
         """
         # Reading csv file with hyperspectral photos
-        data=pd.read_csv(data_path)
-        y_range=data['Line#'].max()+1
-        x_range=data['Column#'].max()+1
+        df=pd.read_csv(data_path)
+        coords = df[['Line#', 'Column#']].values   # shape [num_pixels, 2]
+        spectra = df.drop(columns=['Line#', 'Column#']).values  # shape [num_pixels, num_lambda]
 
-        # Converting it into the numpy array
-        data_np=data.values
-        # Removing indexing of the coordinates
-        data_np=data_np[:,2:]
-        # Reshaping it into the 3D hypercube
-        data_np=data_np.reshape(-1,y_range,x_range)
+        # Get spatial dimensions
+        y_max = coords[:,0].max() + 1
+        x_max = coords[:,1].max() + 1
+        num_lambda = spectra.shape[1]
 
-        # Converting it into the torch tensor
-        cube=torch.from_numpy(data_np).to(self.d_type)
+        # Initialize empty tensor
+        tensor = torch.zeros((num_lambda, y_max, x_max), dtype=torch.float32)
 
-        return cube
+        # Fill tensor
+        for (y, x), spec in zip(coords, spectra):
+            tensor[:, y, x] = torch.tensor(spec, dtype=torch.float32)
+
+        return tensor
     
-    def ref_normalization(self,w_ref_path,d_ref_path,cube):
-        cube_norm=cube
-        return cube_norm
+    def ref_normalization(self,cube,w_ref_path=None,d_ref_path=None,mode=1):
+        """
+        Method which will normalize the reflectance value with respect to slected mode.
+
+        Input:
+            w_ref_path: (string) path to cube contaning the white reference value
+            d_ref_path: (string) path to cube contaning the black reference value
+            cube: (torch.tensor) hypercube in torch tensor format 
+            mode: (0 or 1) determine mode of normalization mode 0 will use additional data paths and mode
+            
+        """
+        if mode==0:
+            return cube
+        elif mode==1:
+            cube_norm=(cube-cube.min())/(cube.max()-cube.min())
+            return cube_norm
+        else:
+            print('Not correct mode selected for the method!')
+            return 1
+
+
+        
 
 
 
